@@ -1,0 +1,33 @@
+{
+    "name": "rodriguez-german/database-handler",
+    "description": "Clase para el manejo de bases de datos, para agregar funcionalidad a las entidades",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "PadawansTrainer\\DatabaseHandler\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "German Rodriguez",
+            "email": "padawanstrainer@gmail.com"
+        }
+    ],
+    "scripts": {
+        "update-configuration":[
+            "PadawansTrainer\\DatabaseHandler\\ScriptHandler::updateConfiguration"
+        ],
+        "installation-scripts": [
+            "PadawansTrainer\\DatabaseHandler\\ScriptHandler::buildConfiguration"
+        ],
+        "post-install-cmd": [
+            "@installation-scripts"
+        ],
+        "post-update-cmd": [
+            "@installation-scripts"
+        ]
+    },
+    "minimum-stability": "dev",
+    "require": {}
+}

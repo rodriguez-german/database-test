@@ -1,2 +1,2 @@
-# database-test
-Prueba de databases
+# database-handler
+Core de manejo de bases de datos
