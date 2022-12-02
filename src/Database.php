@@ -2,9 +2,9 @@
 
 namespace PadawansTrainer\DatabaseHandler;
 
-use PadawansTrainer\DatabaseHandler\Core;
+use PadawansTrainer\DatabaseHandler\Core\Base;
 
-class Database extends Core
+class Database extends Base
 {
 
     public static function one( $id = 0 ){

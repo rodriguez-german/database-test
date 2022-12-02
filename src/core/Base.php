@@ -1,12 +1,12 @@
 <?php
 
-namespace PadawansTrainer\DatabaseHandler;
+namespace PadawansTrainer\DatabaseHandler\Core;
 
-use PDO;
-use PDOException;
-use PadawansTrainer\DatabaseHandler\ScriptHandler;
+use \PDO;
+use \PDOException;
+use PadawansTrainer\DatabaseHandler\Core\ScriptHandler;
 
-class Core
+class Base
 {
     protected static $tabla = 'dual'; //esto va a definir MODELO POR MODELO a qué tabla se le va a pedir cada consulta del CRUD
     protected static $alias = 't'; //t de tabla, es el alias del modelo que esté usando
@@ -53,6 +53,7 @@ class Core
     
             self::$cnx = new PDO( "mysql:host=$host;dbname=$db;port=$port;charset=$charset", $user, $pass );
             self::$cnx->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+            self::$cnx->setAttribute( PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC );
         }
     }
 
@@ -72,7 +73,14 @@ class Core
 		return self::execute( $query , true );
     }
 
-    public static function insert( ){}
+    public static function insert( $params ){
+        $columns = self::array_to_set( $params );
+        $query = "INSERT INTO " . static::$tabla;
+		$query.= " SET $columns";
+
+        return self::execute( $query );
+    }
+
     public static function update( ){}
     public static function delete( ){}
 
@@ -140,9 +148,12 @@ class Core
     protected static function execute( $query_sql, $iterar = false ){
         self::getConnection( );
 
-        var_dump($query_sql);
+        /*
+echo $query_sql;
+var_dump(self::$bindedParams);
         $stm = self::$cnx->prepare( $query_sql );
         foreach( self::$bindedParams as $param => $value ){
+            var_dump($param, $value );
             $stm->bindParam( $param, $value );
         }
 
@@ -179,4 +190,42 @@ class Core
 
         return $respuesta;
     }
+
+
+    private static function getPrimitiveValue( $val ){
+        if( $val === false ) $val = 0;
+        if( $val === true ) $val = 1;
+        if( ! static::$empty && empty( trim( $val ) ) && $val !== 0 && $val !== '0' ) $val = NULL;
+        return $val;
+    }
+
+    private static function array_to_set( $array, $values = [ ], $bindedParams = [ ] ){ 
+		foreach( $array as $f => $v ){ 
+            $param = strtolower($f);
+            $v = self::getPrimitiveValue($v);
+			if( preg_match( '/^now(\(\s?\))?$/i' , $v ) )  $values[ ] = "$f=NOW( )";
+			elseif( preg_match( '/^date\(\s?\)$/i', $v  ) ) $values[ ] = "$f=DATE( NOW( ) )";
+			elseif( preg_match( '/^time\(\s?\)$/i', $v  ) ) $values[ ] = "$f=TIME( NOW( ) )";
+            /*elseif( preg_match( '/^query\:/i' , $v ) ){
+                $subconsulta = str_ireplace( "query:", "", $v );
+                if( preg_match_all( "/=(\d+|'\d+'|\".+?\"|'.+?')/", $subconsulta, $matches ) ){
+                    foreach($matches[0] as $index => $reemplazar){
+                        $param = "sub_".uniqid( );
+                        $subconsulta = str_replace($reemplazar, "=:$param", $subconsulta);
+                        $valor = preg_replace("/[\"'=]/", "", $matches[1][$index] );
+                        $bindedParams[":$param"] = $valor;
+                    }
+                }
+                $values[ ] = "$f=($subconsulta)";
+            }
+            */
+            else{
+                $values[ ] = "$f=:$param";
+                $bindedParams[":$param"] = $v;
+            }
+		}
+
+        self::bind( $bindedParams );
+		return implode( ', ' , $values );
+	}
 }

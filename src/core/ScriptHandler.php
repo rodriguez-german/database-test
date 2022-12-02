@@ -1,7 +1,8 @@
 <?php
-namespace PadawansTrainer\DatabaseHandler;
+namespace PadawansTrainer\DatabaseHandler\Core;
 
 use Composer\Script\Event;
+use Exception;
 
 class ScriptHandler
 {
@@ -13,9 +14,11 @@ class ScriptHandler
         $directoryOutput = self::createDirectoryFromInput( $directoryInput, $event );
         $realPath = str_replace( ["/", "\\"], DIRECTORY_SEPARATOR, $directoryOutput );
 
-        self::saveIniFiles( $realPath );
+        $configName = self::handleFilenameInput($event, $realPath);
 
-        $event->getIO()->write('<warning>Please, before using PadawansTrainer\DatabaseHandler, you must edit parameters in '.$realPath.DIRECTORY_SEPARATOR.self::$iniFilename.'</warning>');
+        self::saveIniFiles( $realPath, $configName );
+
+        $event->getIO()->write('<warning>Please, before using PadawansTrainer\DatabaseHandler, you must edit parameters in '.$realPath.$configName.'</warning>');
     }
 
 
@@ -90,19 +93,47 @@ class ScriptHandler
     }
 
 
-    private static function saveIniFiles(String $path): void
+    private static function handleFilenameInput( Event $event, $path = './' ): String
+    {
+        $filenameInput = '';
+        do{
+            $loop = false;
+            $filenameInput = $event->getIO()->ask('Please, type the name for the configuration file (only letters, numbers and dashs without any extension), it will be stored under '.$path.' (Default `'.self::$iniFilename.'`: ');
+            $filenameInput = trim( $filenameInput );
+
+            $response = self::validateFilenameInput( $filenameInput );
+            if( ! $response ){ $event->getIO()->write('<error>Filename must contain only letters, numbers and dashs</error>' ); $loop = true; }
+        }while( $loop );
+
+        if( empty( $filenameInput ) ) $filenameInput = self::$iniFilename;
+        return $filenameInput.'.ini';
+    }
+
+    private static function validateFilenameInput( String $filename ): Bool
+    {
+        $response = preg_match( "/^([\w-]+)?$/", $filename );
+        return $response;
+    }
+
+    private static function saveIniFiles(String $path, String $filename): void
     {
         $currentDirectory = __DIR__.DIRECTORY_SEPARATOR;
-        @file_put_contents( $currentDirectory.'route.ini', "path=$path" );
-        @copy( $currentDirectory.'config.ini', $path. DIRECTORY_SEPARATOR. self::$iniFilename );
+        @file_put_contents( $currentDirectory.'route.ini', "path=$path\nfile=$filename" );
+        @copy( $currentDirectory.'config.ini', $path. DIRECTORY_SEPARATOR. $filename );
     }
 
 
-    public static function getConfiguration( ): Array
+    public static function getConfiguration( )
     {
         $ini = @parse_ini_file( __DIR__ . DIRECTORY_SEPARATOR . 'route.ini' );
         $path = $ini['path'] ?? NULL;
-        $content = @parse_ini_file($path.DIRECTORY_SEPARATOR.self::$iniFilename, true);
+        $filename = $ini['file'] ?? self::$iniFilename;
+        try{
+            if( ! file_exists($path.$filename) ) throw new Exception("<h1>Error</h1><p>No se ha encontrado el archivo</p><code>$path$filename</code>", 1);
+            $content = parse_ini_file($path.$filename, true);
+        }catch( Exception $e ){
+            die( $e->getMessage() );
+        }
 
         return $content ?? [ ];
     }

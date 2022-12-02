@@ -16,10 +16,10 @@
     ],
     "scripts": {
         "update-configuration":[
-            "PadawansTrainer\\DatabaseHandler\\ScriptHandler::updateConfiguration"
+            "PadawansTrainer\\DatabaseHandler\\Core\\ScriptHandler::updateConfiguration"
         ],
         "installation-scripts": [
-            "PadawansTrainer\\DatabaseHandler\\ScriptHandler::buildConfiguration"
+            "PadawansTrainer\\DatabaseHandler\\Core\\ScriptHandler::buildConfiguration"
         ],
         "post-install-cmd": [
             "@installation-scripts"
